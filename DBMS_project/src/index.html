@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management System</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        body { background-color: #f4f6f9; color: #333; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 30px; color: #1e3a8a; }
+        .main-layout { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h3 { margin-bottom: 15px; color: #2c3e50; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 14px; }
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        button { flex: 1; padding: 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; }
+        .btn-add { background-color: #10b981; }
+        .btn-update { background-color: #3b82f6; }
+        .btn-clear { background-color: #64748b; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+        th { background-color: #f8fafc; color: #64748b; }
+        tr:hover { background-color: #f1f5f9; }
+        .actions button { padding: 5px 10px; font-size: 12px; border-radius: 3px; margin-right: 5px; }
+        .btn-edit { background-color: #eab308; color: #000; }
+        .btn-delete { background-color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Student Record Management System</h1>
+            <p>RV University Mini Project | Full Stack CRUD Application</p>
+        </header>
+        <div class="main-layout">
+            <div class="card">
+                <h3>Student Information</h3>
+                <form id="studentForm">
+                    <input type="hidden" id="student_id">
+                    <div class="form-group"><label>Full Name</label><input type="text" id="name" required></div>
+                    <div class="form-group"><label>Email Address</label><input type="email" id="email" required></div>
+                    <div class="form-group"><label>Course</label>
+                        <select id="course">
+                            <option value="BCA">BCA</option>
+                            <option value="B.Tech">B.Tech</option>
+                            <option value="B.Sc">B.Sc</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Semester</label><input type="number" id="semester" min="1" max="8" required></div>
+                    <div class="btn-group">
+                        <button type="button" class="btn-add" id="addBtn">Add Student</button>
+                        <button type="button" class="btn-update" id="updateBtn" style="display:none;">Update</button>
+                        <button type="button" class="btn-clear" id="clearBtn">Clear</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card">
+                <h3>Registered Students</h3>
+                <table>
+                    <thead>
+                        <tr><th>ID</th><th>Name</th><th>Email</th><th>Course</th><th>Sem</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="studentTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        const API_URL = "http://localhost:8080/api/students";
+        document.addEventListener("DOMContentLoaded", fetchStudents);
+        document.getElementById("addBtn").addEventListener("click", addStudent);
+        document.getElementById("updateBtn").addEventListener("click", updateStudent);
+        document.getElementById("clearBtn").addEventListener("click", clearForm);
+
+        async function fetchStudents() {
+            try {
+                const res = await fetch(API_URL);
+                const students = await res.json();
+                const tbody = document.getElementById("studentTableBody");
+                tbody.innerHTML = "";
+                students.forEach(s => {
+                    tbody.innerHTML += `<tr>
+                        <td>${s.student_id}</td>
+                        <td>${s.name}</td>
+                        <td>${s.email}</td>
+                        <td>${s.course}</td>
+                        <td>${s.semester}</td>
+                        <td class="actions">
+                            <button class="btn-edit" onclick="editStudent(${s.student_id},'${s.name}','${s.email}','${s.course}',${s.semester})">Edit</button>
+                            <button class="btn-delete" onclick="deleteStudent(${s.student_id})">Delete</button>
+                        </td>
+                    </tr>`;
+                });
+            } catch (err) { console.error("API connection pending back-end configuration."); }
+        }
+
+        async function addStudent() {
+            const data = { name: document.getElementById("name").value, email: document.getElementById("email").value, course: document.getElementById("course").value, semester: parseInt(document.getElementById("semester").value) };
+            await fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+            clearForm(); fetchStudents();
+        }
+
+        function editStudent(id, name, email, course, sem) {
+            document.getElementById("student_id").value = id;
+            document.getElementById("name").value = name;
+            document.getElementById("email").value = email;
+            document.getElementById("course").value = course;
+            document.getElementById("semester").value = sem;
+            document.getElementById("addBtn").style.display = "none";
+            document.getElementById("updateBtn").style.display = "inline-block";
+        }
+
+        async function updateStudent() {
+            const id = document.getElementById("student_id").value;
+            const data = { 
+                name: document.getElementById("name").value, 
+                email: document.getElementById("email").value, 
+                course: document.getElementById("course").value, 
+                semester: parseInt(document.getElementById("semester").value) 
+            };
+            await fetch(`${API_URL}/${id}`, { 
+                method: "PUT", 
+                headers: { "Content-Type": "application/json" }, 
+                body: JSON.stringify(data) 
+            });
+            clearForm(); fetchStudents();
+        }
+
+        async function deleteStudent(id) {
+            if(confirm("Confirm Delete Record?")) {
+                await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+                fetchStudents();
+            }
+        }
+
+        function clearForm() {
+            document.getElementById("studentForm").reset();
+            document.getElementById("student_id").value = "";
+            document.getElementById("addBtn").style.display = "inline-block";
+            document.getElementById("updateBtn").style.display = "none";
+        }
+    </script>
+</body>
+</html>
